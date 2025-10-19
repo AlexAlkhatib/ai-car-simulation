@@ -1,5 +1,3 @@
----
-
 # 🚗 Simulation de voitures autonomes avec NEAT
 
 ## 🧩 Installation des dépendances
@@ -14,8 +12,6 @@ python --version
 ```
 
 Si ce n’est pas le cas, téléchargez et installez Python depuis [python.org](https://www.python.org/).
-
----
 
 ### 2. Installer les dépendances
 
