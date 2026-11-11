@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voitures autonomes · NEAT</title>
+  <meta name="description" content="Simulation de voitures autonomes par neuroévolution NEAT, calculée en Python et rendue dans le navigateur.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">🚗</span>
+        <div class="brand-text">
+          <h1>Voitures autonomes</h1>
+          <p>Neuroévolution NEAT · Python + Flask</p>
+        </div>
+      </div>
+      <div class="topbar-meta">
+        <span class="pill" id="connection-pill" data-state="connecting">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="connection-label">Connexion…</span>
+        </span>
+        <span class="pill" id="status-pill" data-state="idle">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="status-label">Prêt</span>
+        </span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="stage" aria-label="Piste de simulation">
+        <div class="canvas-shell">
+          <canvas id="sim-canvas" width="1920" height="1080"></canvas>
+          <span class="stage-badge" id="stage-badge" hidden>En pause</span>
+          <span class="stage-hint">Espace : pause · R : réinitialiser</span>
+        </div>
+
+        <div class="kpis">
+          <article class="kpi">
+            <span class="kpi-label">Génération</span>
+            <strong class="kpi-value" id="kpi-generation">0</strong>
+            <span class="kpi-sub" id="kpi-generation-sub">sur 1000</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Voitures en vie</span>
+            <strong class="kpi-value" id="kpi-alive">0</strong>
+            <span class="kpi-sub" id="kpi-alive-sub">population 30</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Fitness de la génération</span>
+            <strong class="kpi-value" id="kpi-fitness">0</strong>
+            <span class="kpi-sub">distance / 30 px</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Record</span>
+            <strong class="kpi-value" id="kpi-record">0</strong>
+            <span class="kpi-sub" id="kpi-record-sub">meilleur génome</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Cadence</span>
+            <strong class="kpi-value" id="kpi-fps">0</strong>
+            <span class="kpi-sub" id="kpi-fps-sub">images / s</span>
+          </article>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Progression de la génération</h2>
+            <span class="panel-meta" id="progress-label">0 / 1200 frames</span>
+          </div>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="1200" aria-valuenow="0" id="progress-track">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <div class="panel">
+          <h2>Contrôles</h2>
+          <div class="buttons">
+            <button type="button" class="btn btn-primary" id="btn-play">Démarrer</button>
+            <button type="button" class="btn" id="btn-reset">Réinitialiser</button>
+          </div>
+
+          <label class="field" for="speed-select">
+            <span>Vitesse de simulation</span>
+            <select id="speed-select"></select>
+          </label>
+
+          <label class="field" for="map-select">
+            <span>Carte</span>
+            <select id="map-select"></select>
+          </label>
+
+          <label class="switch" for="radars-toggle">
+            <input type="checkbox" id="radars-toggle" checked>
+            <span>Afficher les radars</span>
+          </label>
+
+          <a class="btn btn-ghost" id="genome-link" href="/api/best-genome" hidden>
+            Télécharger le meilleur génome
+          </a>
+          <p class="hint" id="genome-hint">
+            Le meilleur génome est enregistré automatiquement dans <code>runs/</code>.
+          </p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Évolution de la fitness</h2>
+            <span class="panel-meta" id="chart-meta">—</span>
+          </div>
+          <canvas id="chart" width="640" height="320" aria-label="Courbe de fitness par génération"></canvas>
+          <div class="legend">
+            <span class="legend-item legend-best">Meilleure</span>
+            <span class="legend-item legend-mean">Moyenne</span>
+          </div>
+        </div>
+
+        <div class="panel panel-muted">
+          <h2>Configuration</h2>
+          <dl class="config-list" id="config-list">
+            <div><dt>Population</dt><dd id="cfg-population">—</dd></div>
+            <div><dt>Capteurs</dt><dd id="cfg-sensors">—</dd></div>
+            <div><dt>Actions</dt><dd id="cfg-actions">—</dd></div>
+            <div><dt>Frames / génération</dt><dd id="cfg-frames">—</dd></div>
+            <div><dt>Cadence de référence</dt><dd id="cfg-fps">—</dd></div>
+            <div><dt>Piste</dt><dd id="cfg-track">—</dd></div>
+          </dl>
+        </div>
+
+        <div class="panel panel-error" id="error-panel" hidden>
+          <h2>Erreur du moteur</h2>
+          <pre id="error-text"></pre>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Chaque voiture est pilotée par un réseau de neurones évolué par NEAT :
+        5 capteurs de distance, 4 actions (gauche, droite, ralentir, accélérer)
+        et une récompense proportionnelle à la distance parcourue sans collision.
+      </p>
+      <p class="footer-dim">Physique et évolution identiques à la version Pygame d'origine.</p>
+    </footer>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Artefacts générés
+runs/*.pkl
+runs/*.json
+
+# Divers
+.DS_Store
+*.zip

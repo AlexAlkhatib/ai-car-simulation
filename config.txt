@@ -3,6 +3,9 @@ fitness_criterion     = max
 fitness_threshold     = 100000000
 pop_size              = 30
 reset_on_extinction   = True
+# Exigé par neat-python >= 2.0 (absent du fichier d'origine).
+# False = on utilise fitness_criterion/threshold, comme avant.
+no_fitness_termination = False
 
 [DefaultGenome]
 # node activation options
